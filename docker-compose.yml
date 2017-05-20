@@ -1,0 +1,22 @@
+version: '2'
+services:
+  redis-0:
+    image: redis
+    ports:
+      - "8000:6379"
+  redis-1:
+    image: redis
+    ports:
+      - "8001:6379"
+  redis-2:
+    image: redis
+    ports:
+      - "8002:6379"
+  redis-3:
+    image: redis
+    ports:
+      - "8003:6379"
+  redis-4:
+    image: redis
+    ports:
+      - "8004:6379"
