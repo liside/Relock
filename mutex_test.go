@@ -69,6 +69,8 @@ func TestGoMutex(t *testing.T) {
 			//fmt.Println("Server has the lock", i)
 			if err != nil {
 				t.Fatalf("Expected err == nil, got %q", err)
+							orderCh <- i
+				return
 			}
 			fmt.Println("Before sleep", i)
 			if i % 2 == 0 {
