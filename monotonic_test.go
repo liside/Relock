@@ -8,28 +8,23 @@ import (
 
 func TestMonotonicTime(t *testing.T) {
 	orderCh := make(chan int)
-  flag := 0
-  // pools := vmPools(5)
-	pools := newMockPools(8)
+  flag := -1
+  pools := newVMPools(5)
+	// pools := newMockPools(8)
   rs := New(pools)
 
   mutex := rs.NewMutex("test-redsync")
 
   sleepTime := [2]int{10, 0}
   for idx, _ := range sleepTime {
-		fmt.Println("index is %d", idx)
-
 		go func(idx int) {
 			err := mutex.Lock()
 			if err != nil {
 				t.Fatalf("Expected err == nil, got %q", err)
 			}
 
-			fmt.Println("========index is %d", idx)
-
 			if idx == 0 {
 				// network partition
-				fmt.Println("it actually is gonna sleep")
 				time.Sleep(10 * time.Second)
 			}
 

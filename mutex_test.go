@@ -58,38 +58,6 @@ func TestMutexExtend(t *testing.T) {
 	}
 }
 
-func TestGoMutex(t *testing.T) {
-	pools := newMockPools(8)
-	mutexes := newTestMutexes(pools, "test-mutex", 8)
-	orderCh := make(chan int)
-	for i, mutex := range mutexes {
-		go func(i int, mutex *Mutex) {
-			//fmt.Println("Server tries to lock", i)
-			err := mutex.Lock()
-			//fmt.Println("Server has the lock", i)
-			if err != nil {
-				t.Fatalf("Expected err == nil, got %q", err)
-							orderCh <- i
-				return
-			}
-			fmt.Println("Before sleep", i)
-			if i % 2 == 0 {
-				time.Sleep(1000 * time.Millisecond)
-			}
-			fmt.Println("After sleep", i)
-
-			defer mutex.Unlock()
-
-			assertAcquired(t, pools, mutex)
-
-			orderCh <- i
-		}(i, mutex)
-	}
-	for range mutexes {
-		<-orderCh
-	}
-}
-
 func TestMutexQuorum(t *testing.T) {
 	pools := newMockPools(4)
 	for mask := 0; mask < 1<<uint(len(pools)); mask++ {
@@ -187,7 +155,7 @@ func newTestMutexes(pools []Pool, name string, n int) []*Mutex {
 	for i := 0; i < n; i++ {
 		mutexes = append(mutexes, &Mutex{
 			name:   name,
-			expiry: 3 * time.Second,
+			expiry: 8 * time.Second,
 			tries:  32,
 			delay:  500 * time.Millisecond,
 			factor: 0.01,
@@ -209,4 +177,28 @@ func assertAcquired(t *testing.T, pools []Pool, mutex *Mutex) {
 	if n < mutex.quorum {
 		t.Fatalf("Expected n >= %d, got %d", mutex.quorum, n)
 	}
+}
+
+func newVMPools (n int) []Pool {
+	pools := []Pool{}
+	for index, _ := range servers {
+		func(index int) {
+			pools = append(pools, &redis.Pool{
+				MaxIdle:     3,
+				IdleTimeout: 240 * time.Second,
+				Dial: func() (redis.Conn, error) {
+					fmt.Printf("localhost:%d\n", 8000 + index)
+					return redis.Dial("tcp", fmt.Sprintf("localhost:%d", 8000 + index))
+				},
+				TestOnBorrow: func(c redis.Conn, t time.Time) error {
+					_, err := c.Do("PING")
+					return err
+				},
+			})
+		}(index)
+		if len(pools) == n {
+			break
+		}
+	}
+	return pools
 }
