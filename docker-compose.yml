@@ -20,3 +20,7 @@ services:
     image: redis
     ports:
       - "8004:6379"
+  redis-5:
+    image: redis
+    ports:
+      - "8005:6379"
